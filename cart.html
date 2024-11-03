@@ -51,6 +51,7 @@
 
     
     <!--container-->
+    
     <div class="small-container cart-page">
         <table>
             <thead>
@@ -60,29 +61,25 @@
                     <th>Subtotal</th>
                 </tr>
             </thead>
+       
+
+    <!-- Élément pour afficher le prix total, si nécessaire -->
+    <p id="total-price"></p>
+
+        <table>
+           
             <tbody class="bodyOfTable">
-                <tr>
-                    <td>
-                        <div class="cart-info">
-                            <img src="images/product-1.jpg" alt="">
-                            <div>
-                                <p>Red Printed Tshirt</p>
-                                <small>price: $50.00</small><br>
-                                <a href="">Remove</a>
-
-                            </div>
-                        </div>
-                    </td>
-                    <td><input type="number" value="1"></td>
-                    <td>$50.00</td>
-                </tr>
-
+                <div class="small-container cart-page">
+                    <div id="cart-items"></div>  
+            
 
 
             </tbody>
         </table>
 
         <div class="total-price">
+
+          
 
             <table>
                 <tbody>

@@ -47,83 +47,236 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+// Fonction pour récupérer tous les articles du LocalStorage
 function getAllLocalStorageItems() {
-    const itemsArray = []; // Initialize an empty array
-
-    // Iterate through each key in local storage
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i); // Get the key
-        const value = localStorage.getItem(key); // Get the value
-        itemsArray.push({ key, value }); // Add to the array
-    }
-
-    return itemsArray; // Return the array
+    return JSON.parse(localStorage.getItem("cartProducts")) || []; // Retournez un tableau vide si aucun produit n'est trouvé
 }
 
+// Fonction pour ajouter un produit au panier
+function addToCart(event, Id) {
+    const buttonClicked = event.currentTarget;
+    const clickedProduct = buttonClicked.closest('.product');
 
-// Adding to cart
-let productCounter = 1;
+    // Récupérez les détails du produit
+    const productImage = clickedProduct.getElementsByTagName('img')[0].src;
+    const productTitle = clickedProduct.getElementsByTagName('h4')[0].textContent;
+    const productPrice = clickedProduct.getAttribute('data-price');
 
-// Saving product data in localStorage
-function addToCart(event,Id) {
-    const buttonClicked = event.currentTarget; // The clicked product element
-    const clickedProduct=buttonClicked.closest('.product');
+    // Récupérez les produits existants dans le panier
+    let cartProducts = getAllLocalStorageItems();
 
-    // Access the first <img>, <h4>, and data-price attributes
-    const productImage = clickedProduct.getElementsByTagName('img')[0].src; // Get the first <img> element
-    const productTitle = clickedProduct.getElementsByTagName('h4')[0].textContent; // Get the text content of the first <h4> element
-    const productPrice = clickedProduct.getAttribute('data-price'); // Get the price from the data attribute
-
-    // check if product not in cart
-    const localStorageItems=getAllLocalStorageItems();
-
-    let found=false;
-    for (let i = 0; i<localStorageItems.length; i++) {
-        const localStorageItem = localStorageItems[i];
-        if (localStorageItem.key.includes("productInCart")) {
-            // Parse existing product to update it
-            const existingProduct = JSON.parse(localStorageItem.value); // Ensure value is parsed correctly
-            if(existingProduct.productId===Id){
-                console.log('Current Product Quantity:', existingProduct.productQuantity); // Log the current productQuantity correctly
-                existingProduct.productQuantity++; // Increment quantity
-                localStorage.setItem(localStorageItem.key, JSON.stringify(existingProduct)); // Update the existing product in local storage
-                found = true;
-                break; // Exit the loop if product is found and updated
-            }
+    // Vérifiez si le produit est déjà dans le panier
+    let found = false;
+    for (let i = 0; i < cartProducts.length; i++) {
+        if (cartProducts[i].productId === Id) {
+            // Si le produit existe, augmentez la quantité
+            cartProducts[i].productQuantity++;
+            found = true;
+            break;
         }
     }
 
-    // If product was not found in the cart, add it as a new entry
+    // Si le produit n'est pas trouvé, ajoutez-le au panier
     if (!found) {
         const productToSave = {
-            productId:Id,
+            productId: Id,
             productImage: productImage,
             productTitle: productTitle,
             productPrice: productPrice,
             productQuantity: 1,
         };
-        // Save the product as a JSON string in localStorage
-        const newProductKey = 'productInCart' + productCounter;
-        localStorage.setItem(newProductKey, JSON.stringify(productToSave));
-        console.log('New product added:', newProductKey);
-
-
-        // Increment cart item count
-        productCounter++;
-        
-        console.log(productCounter);
+        cartProducts.push(productToSave);
     }
-    // Redirect to the cart page
-    window.location.href = "cart.html"; 
+
+    // Enregistrez les produits mis à jour dans le LocalStorage
+    localStorage.setItem("cartProducts", JSON.stringify(cartProducts));
+
+    // Redirigez vers la page du panier
+    window.location.href = "cart.html";
 }
 
-// adding to cart page
-window.onload = function() {
-    // Check if the current URL contains "product-detail.html"
-    if (window.location.href.includes("cart.html")) {
-        const localStorageItems=getAllLocalStorageItems();
-        const cartProducts=localStorageItems.filter(function(product){
-            return product.key.includes("productInCart");
-        })
-        console.log(cartProducts);
-    }}
+// Fonction pour afficher les produits dans le panier
+function displayCartItems() {
+    const cartContainer = document.getElementById('cart-items');
+    cartContainer.innerHTML = ''; // Effacez le contenu existant
+
+    // Obtenez les articles du LocalStorage
+    const cartProducts = getAllLocalStorageItems();
+
+    // Affichez chaque produit
+    cartProducts.forEach(function (product) {
+        const productHTML = `
+            <div class="cart-item">
+                <img src="${product.productImage}" alt="${product.productTitle}">
+                <h4>${product.productTitle}</h4>
+                <p>Prix : ${product.productPrice} €</p>
+                <p>Quantité : ${product.productQuantity}</p>
+                <button onclick="removeFromCart('${product.productId}')">Retirer</button>
+            </div>
+        `;
+        cartContainer.innerHTML += productHTML;
+    });
+}
+
+// Appelez cette fonction lorsque la page du panier est chargée
+if (window.location.href.includes("cart.html")) {
+    displayCartItems();
+}
+
+
+
+
+
+const placeOrderButton = document.getElementById('place_order_button');
+
+placeOrderButton.addEventListener('click',function(){
+    const firstName=document.getElementById('first_name');
+    const lastName=document.getElementById('last_name');
+    const country=document.getElementById('country');
+    const streetAdress=document.getElementById('street_adress');
+    const townCity=document.getElementById('town_city');
+    const stateCounty=document.getElementById('state_county');
+    const zip=document.getElementById('zip');
+    const phoneNumber=document.getElementById('phone_number');
+    const email = document.getElementById('email');
+    if(NameValidate(firstName) && NameValidate(lastName) && requiredInput(country) && requiredInput(streetAdress) && requiredInput(townCity) && requiredInput(stateCounty) && ZipValidate(zip) && phoneValidate(phoneNumber) && emailValidate(email)){
+        console.log("form valid");
+        window.location.href = "index.html"; 
+    }
+})
+
+
+// validation functions
+function showInputError(element,message){
+    const pError = element.parentElement.nextElementSibling;
+    pError.innerText=message;
+}
+// required function
+function requiredInput(element){
+    if (element.value.trim() === ''){
+        showInputError(element,"This element is requierd !");
+        return false;
+    }
+    else{
+        return true;
+    }
+}
+
+// only alphabets function
+function onlyAlphabet(element,str) {
+    const isValid = /^[A-Za-z]+$/.test(str); // Check if the string contains only alphabets
+    if(!isValid){
+        showInputError(element, "only alphabets!");
+    }
+    else{
+        showInputError(element, "");
+    }
+    return isValid;
+}
+
+// function of first and last name validation
+function NameValidate(element){
+    if(requiredInput(element) && onlyAlphabet(element,element.value) && validateNameLength(element,element.value)){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+function validateNameLength(element, str) { // first and last name has to be between 2 and 30 characters
+    if (str.length > 30 || str.length < 2) {
+        showInputError(element, "Length must be between 2 and 30 characters.");
+        return false;
+    } else {
+        showInputError(element, "");
+        return true;
+    }
+}
+
+// zip length
+function zipLength(element, str) { // first and last name has to be between 2 and 30 characters
+    if (str.length > 10 || str.length < 5) {
+        showInputError(element, "Length must be between 5 and 10 characters.");
+        return false;
+    } else {
+        showInputError(element, "");
+        return true;
+    }
+}
+function onlyAlphaNums(element, str) {
+    const isValid = /^(?=.*[0-9])[A-Za-z0-9]+$/.test(str); // Requires at least one digit and allows letters and numbers
+    if (!isValid) {
+        showInputError(element, "Must contain at least one number and only alphanumeric characters!");
+    } else {
+        showInputError(element, "");
+    }
+    return isValid;
+}
+
+// function of zip validation
+function ZipValidate(element){
+    if(requiredInput(element) && onlyAlphaNums(element,element.value) && zipLength(element,element.value)){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+
+// phone number chars
+function phoneNumChars(element,str) {
+    const isValid = /^[0-9+\s()-]+$/.test(str);// nums whitespace + - and *()
+     if(!isValid){
+        showInputError(element, "Enter a valid phone number!");
+    }
+    else{
+        showInputError(element, "");
+    }
+    return isValid;
+}
+// phone number length
+function phoneNumLength(element, str) { // first and last name has to be between 2 and 30 characters
+    if (str.length > 15 || str.length < 8) {
+        showInputError(element, "Length must be between 8 and 15 characters.");
+        return false;
+    } else {
+        showInputError(element, "");
+        return true;
+    }
+}
+// function of phone number validation
+function phoneValidate(element){
+    if(requiredInput(element) && phoneNumChars(element,element.value) && phoneNumLength(element,element.value)){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+// phone number chars
+function emailChars(element,str) {
+    const isValid = /^(?=.*[@])(?=.*[.])[a-z0-9+\s()\-@.]+$/.test(str);
+     if(!isValid){
+        showInputError(element, "Enter a valid email");
+    }
+    else{
+        showInputError(element, "");
+    }
+    return isValid;
+}
+
+// function of phone number validation
+function emailValidate(element){
+    if(requiredInput(element) && emailChars(element,element.value)){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+document.querySelector('.fa-bars').addEventListener('click', function() {
+    const menu = document.querySelector('.menu-bar-side');
+    menu.classList.toggle('active'); // Ajoute ou enlève la classe 'active'
+});
